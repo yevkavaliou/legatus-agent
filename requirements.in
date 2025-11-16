@@ -1,0 +1,35 @@
+# ===================================================================
+# AI Analyst Agent - Direct Dependencies
+# ===================================================================
+
+# --- PyTorch ---
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+
+# --- Core & Orchestration ---
+PyYAML>=6.0
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+langchain-ollama>=0.3.0
+langchain-google-vertexai>=2.0.0
+python-dotenv>=1.0.0
+rich>=13.0.0
+
+# --- Module: Context Generator ---
+toml>=0.10.0
+
+# --- Module: Scout ---
+feedparser>=6.0.0
+beautifulsoup4>=4.12.0 # For summary cleaning in scout
+
+# --- Module: Vigil ---
+# The spaCy model is installed separately in the Dockerfile
+sentence-transformers>=2.2.2
+
+# --- Module: Speculator ---
+requests>=2.32.0
+trafilatura>=1.7.0
+aiohttp>=3.9.0

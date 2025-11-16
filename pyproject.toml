@@ -1,0 +1,7 @@
+[project]
+name = "legatus-ai-agent"
+version = "0.7.0"
+description = "An AI-driven agent for dependency analysis and Q&A."
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,30 @@
+**Article to Analyze:**
+- Title: {title}
+- Summary: {summary}
+- Full Text: ```{article_text}```
+
+**Your Task:**
+Follow these steps to generate your analysis:
+
+**Step 1: Initial Assessment.**
+Read the article and identify the core technology being discussed. Does this technology directly impact the project based on the context provided in your system prompt?
+
+**Step 2: Impact Analysis.**
+Based on Step 1, determine the *immediate impact* on our team. Ask yourself:
+  - Is this a security vulnerability we must patch? (Highest impact)
+  - Is this a breaking change in a library we use? (High impact)
+  - Is this a new feature that solves a problem we currently have? (Medium impact)
+  - Is this a general announcement, a case study, or about a technology we don't use (e.g., Wear OS, TV, Gaming)? (Low impact)
+  - Is this just an opinion piece or blog post with no actionable information? (Lowest impact)
+
+**Step 3: Generate the JSON object.**
+Based on your analysis, create a JSON object with the following keys. Be concise and direct in your language.
+  - "is_relevant": A boolean (`true` or `false`).
+  - "summary": A 2-3 sentence summary written for a busy tech lead. Start with the "so what?". Example: "This article announces a new version of Retrofit that fixes a critical security bug. We should update immediately."
+  - "criticality_score": An integer from 1 to 5, based STRICTLY on your Impact Analysis in Step 2.
+    - 5: Urgent. Security vulnerability or a fix for a bug we are currently facing.
+    - 4: High. A breaking change is announced for a library we use.
+    - 3: Medium. A major new feature is released that could directly solve one of our stated project goals.
+    - 2: Low. Informational. A minor update, a case study, or an update to a related but non-critical dependency.
+    - 1: Very Low. An opinion piece, a general announcement, or related to a technology we do not use.
+  - "justification": A brief, direct justification for your score. Example: "The article announces a new feature for a technology (Wear OS) that is not in our project's scope."

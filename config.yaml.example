@@ -1,0 +1,150 @@
+# ===================================================================
+#          Example Configuration for Legatus AI (v0.7.0)
+# ===================================================================
+# 1. Rename this file to 'config.yaml' in your project directory.
+# 2. Fill in the placeholder values (like YOUR_..._HERE).
+# 3. Mount it into the Docker container when you run the agent.
+# ===================================================================
+
+# ===================================================================
+# 1. GLOBAL SETTINGS
+# ===================================================================
+# Enable verbose logging to see detailed info about logic and filtering.
+# Recommended: false for normal use, true for debugging.
+debug: false
+
+# ===================================================================
+# 2. PROJECT CONTEXT
+#    Define the "identity" of the project you want Legatus to analyze.
+#    This is crucial for accurate semantic filtering.
+# ===================================================================
+project_info:
+  # A natural language description of your project's purpose and tech stack.
+  # Be descriptive! The more context the AI has, the better its analysis.
+  context: |
+    This is an Android application that allows users to browse and purchase
+    products from a retail catalog. The stack is 100% Kotlin. We use Jetpack
+    Compose for UI, Coroutines and Kotlin Flows for async operations, Retrofit
+    for networking, and Hilt for dependency injection.
+
+  # Your project's build configuration.
+  build_config:
+    minSdk: 24
+    targetSdk: 34
+    compileSdk: 34
+    build_features:
+      - "compose"
+      - "buildConfig"
+
+  # Key permissions or hardware features your app uses.
+  capabilities:
+    permissions:
+      - "android.permission.INTERNET"
+    features:
+      - "android.hardware.camera.any"
+
+  dependency_sources:
+    # To analyze your project's dependencies, mount your project into the
+    # container at /app/project_data and provide the path to your
+    # version catalog file here. Note: the name of file must be exactly
+    # 'libs.versions.toml'
+    version_catalog_file:
+      enabled: true # false if you don't want to provide it
+
+    # Add any other important technologies or keywords to track.
+    manual_keywords:
+      - "android studio"
+      - "gradle"
+      - "kotlin multiplatform"
+      - "otto event bus"
+
+# ===================================================================
+# 3. DATA SOURCES
+#    Where Legatus should look for new information. Add your favorites!
+# ===================================================================
+data_sources:
+  rss_feeds:
+    - "https://android-developers.googleblog.com/feeds/posts/default"
+    - "https://blog.jetbrains.com/kotlin/feed/"
+    - "https://medium.com/feed/androiddevelopers"
+    - "https://proandroiddev.com/feed"
+  github_releases:
+    - "square/retrofit"
+    - "google/hilt"
+    - "Insert-Koin/koin"
+
+# ===================================================================
+# 4. ANALYSIS RULES
+#    Control how data is gathered and filtered.
+# ===================================================================
+analysis_rules:
+  # How far back in time to search for "new" articles (in hours).
+  lookback_period_hours: 72
+
+  # The minimum semantic similarity score (0.0 to 1.0) for an article
+  # to pass the initial filter. Higher = Stricter.
+  # Recommended: 0.30 is a good balance. 0.40 is strict.
+  vigil_similarity_threshold: 0.30
+
+# ===================================================================
+# 5. AI SETTINGS
+#    Configure the LLMs and embedding models.
+# ===================================================================
+ai_settings:
+  # The SentenceTransformer model for semantic search.
+  # 'all-MiniLM-L6-v2' is fast and lightweight.
+  # 'all-mpnet-base-v2' is larger and more accurate.
+  # See huggingface.co/models?library=sentence-transformers for more.
+  embedding_model: "all-MiniLM-L6-v2"
+
+  # Config for Legatus (The Analyst Pipeline)
+  legatus_agent:
+    provider: "ollama" # Options: "ollama", "google"
+    temperature: 0.2
+    model: "llama3.1"
+
+  # Config for Inquisitor (The Q&A Agent)
+  inquisitor_agent:
+    provider: "ollama"
+    temperature: 0.0 # Keep at 0.0 for reliable tool use
+    model: "llama3.1"
+
+  # Provider-specific settings
+  providers:
+    google:
+      model: "gemini-2.5-flash-latest"
+      project_id: "YOUR_GCP_PROJECT_ID_HERE"
+    ollama:
+      # This URL allows the container to talk to Ollama running on your host machine.
+      base_url: "http://host.docker.internal:11434"
+
+# ===================================================================
+# 6. MODULE SETTINGS
+#    Fine-tune the behavior of specific pipeline stages.
+# ===================================================================
+scout_settings:
+  # Be a good internet citizen! Identify your agent.
+  user_agent: "LegatusScout/0.7.0 (YourName/YourProject)"
+  timeout: 20 # seconds
+
+speculator_settings:
+  user_agent: "LegatusSpeculator/0.7.0 (YourName/YourProject)"
+  timeout: 30 # seconds
+  # Max concurrent articles to analyze. Keep low (3-5) for local LLMs.
+  concurrency_limit: 5
+
+notarius_settings:
+  # Report format. Available options: "csv", "json"
+  format: "csv"
+  # To use a fixed report filename (e.g., for automation), uncomment the next line.
+  # The path is relative to your mounted 'reports' directory.
+  # output_path: "latest_analysis.csv"
+
+# ===================================================================
+# 7. SECURITY
+# ===================================================================
+security:
+  # List of domains where SSL certificate verification should be skipped.
+  # USE WITH EXTREME CAUTION. Only for trusted sites with known cert issues.
+  skip_ssl_verify:
+    # - "example.com"
