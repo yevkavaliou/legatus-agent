@@ -1,6 +1,6 @@
 # Legatus AI - AI-Powered Dependency Analyst
 
-![Legatus AI Banner](https://i.imgur.com/your-banner-image.png) <!-- Placeholder: Create a simple banner for visual appeal -->
+![Legatus AI Banner](https://i.imgur.com/2i6yIfQ.png)
 
 **Legatus AI is an automated, AI-driven agent that scans the tech landscape for news, releases, and articles relevant to your project's specific technology stack, providing you with prioritized, actionable analysis.**
 
@@ -83,7 +83,7 @@ docker run --rm -it \
   -v "$(pwd)/project_to_analyze:/app/project_to_analyze" \
   -v "$(pwd)/data:/app/data" \
   -v "$(pwd)/reports:/app/reports" \
-  yevkovalev/legatus-agent:latest
+  yevkavaliou/legatus-agent:latest
 ```
 
 #### On Windows (PowerShell)
@@ -97,7 +97,7 @@ docker run --rm -it `
   -v "${pwd}/project_to_analyze:/app/project_to_analyze" `
   -v "${pwd}/data:/app/data" `
   -v "${pwd}/reports:/app/reports" `
-  yevkovalev/legatus-agent:latest
+  yevkavaliou/legatus-agent:latest
 ```
 
 The agent will now run its analysis pipeline. When it's finished, you will find the generated report in your `reports` folder and the SQLite database in your `data` folder.
@@ -116,7 +116,7 @@ docker run --rm -it \
   -v "$(pwd)/.env:/app/.env" \
   -v "$(pwd)/prompts:/app/prompts" \
   -v "$(pwd)/data:/app/data" \
-  yevkovalev/legatus-agent:latest \
+  yevkavaliou/legatus-agent:latest \
   python -m src.legatus_ai.inquisitor
 ```
 
