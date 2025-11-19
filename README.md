@@ -49,7 +49,7 @@ Copy the example configuration from the repository (`config.yaml.example`) and s
 
 **➡️ Edit `config.yaml`:**
 *   Update the `project_info` section to describe your project.
-*   **Crucially**, if you have a Gradle Version Catalog (`libs.versions.toml`), place it inside the `project_to_analyze` directory and make sure the setting is enabled in your `config.yaml`:
+*   **Crucially**, if you have a Gradle Version Catalog (`libs.versions.toml`), place it inside the `project_data` directory and make sure the setting is enabled in your `config.yaml`:
     ```yaml
     # inside your config.yaml
     version_catalog_file:
@@ -80,7 +80,7 @@ docker run --rm -it \
   -v "$(pwd)/config.yaml:/app/config.yaml" \
   -v "$(pwd)/.env:/app/.env" \
   -v "$(pwd)/prompts:/app/prompts" \
-  -v "$(pwd)/project_to_analyze:/app/project_to_analyze" \
+  -v "$(pwd)/project_data:/app/project_data" \
   -v "$(pwd)/data:/app/data" \
   -v "$(pwd)/reports:/app/reports" \
   yevkavaliou/legatus-agent:latest
@@ -94,7 +94,7 @@ docker run --rm -it `
   -v "${pwd}/config.yaml:/app/config.yaml" `
   -v "${pwd}/.env:/app/.env" `
   -v "${pwd}/prompts:/app/prompts" `
-  -v "${pwd}/project_to_analyze:/app/project_to_analyze" `
+  -v "${pwd}/project_data:/app/project_data" `
   -v "${pwd}/data:/app/data" `
   -v "${pwd}/reports:/app/reports" `
   yevkavaliou/legatus-agent:latest
