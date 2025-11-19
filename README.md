@@ -83,6 +83,7 @@ docker run --rm -it \
   -v "$(pwd)/project_data:/app/project_data" \
   -v "$(pwd)/data:/app/data" \
   -v "$(pwd)/reports:/app/reports" \
+  -v "$(pwd)/hf_cache:/app/hf_cache" \
   yevkavaliou/legatus-agent:latest
 ```
 
