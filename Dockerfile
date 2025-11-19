@@ -24,14 +24,14 @@ WORKDIR /app
 RUN mkdir -p /app/data \
              /app/prompts \
              /app/reports \
-             /app/project_data
+             /app/project_data \
+             /app/hf_cache
 
 COPY --from=builder /opt/venv /opt/venv
-
 COPY . .
 
 ENV PATH="/opt/venv/bin:$PATH"
-
 ENV RUNNING_IN_DOCKER=true
+ENV ENV HF_HOME="/app/hf_cache"
 
 CMD ["python", "-m", "src.legatus_ai.legatus"]
