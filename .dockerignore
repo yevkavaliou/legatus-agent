@@ -8,8 +8,6 @@ Dockerfile
 venv
 env
 
-.entrypoint.sh
-
 data/
 project_data/
 prompts/
