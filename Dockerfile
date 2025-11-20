@@ -39,14 +39,13 @@ RUN mkdir -p /app/data \
 
 COPY --from=builder /opt/venv /opt/venv
 
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
 COPY . .
+
+RUN chmod +x /app/entrypoint.sh
 
 ENV PATH="/opt/venv/bin:$PATH"
 ENV RUNNING_IN_DOCKER=true
-ENV ENV HF_HOME="/app/hf_cache"
+ENV HF_HOME="/app/hf_cache"
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 
