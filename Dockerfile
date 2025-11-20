@@ -41,13 +41,13 @@ COPY --from=builder /opt/venv /opt/venv
 
 COPY . .
 
-RUN sed -i 's/\r$//' /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+# RUN sed -i 's/\r$//' /app/entrypoint.sh
+# RUN chmod +x /app/entrypoint.sh
 
 ENV PATH="/opt/venv/bin:$PATH"
 ENV RUNNING_IN_DOCKER=true
 ENV HF_HOME="/app/hf_cache"
 
-ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
+# ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
 
-CMD ["legatus"]
+CMD ["python", "-m", "src.legatus_ai.legatus"]
