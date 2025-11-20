@@ -4,8 +4,6 @@
 #
 #    pip-compile requirements.in
 #
---extra-index-url https://download.pytorch.org/whl/cpu
-
 aiohappyeyeballs==2.6.1
     # via aiohttp
 aiohttp==3.13.2
@@ -132,7 +130,6 @@ httpcore==1.0.9
     # via httpx
 httpx==0.28.1
     # via
-    #   -r requirements.in
     #   google-genai
     #   langchain-google-vertexai
     #   langgraph-sdk
@@ -386,15 +383,15 @@ tokenizers==0.22.1
     # via transformers
 toml==0.10.2
     # via -r requirements.in
-torch==2.9.0+cpu
+torch==2.9.1
     # via
     #   -r requirements.in
     #   sentence-transformers
     #   torchaudio
     #   torchvision
-torchaudio==2.9.0+cpu
+torchaudio==2.9.1
     # via -r requirements.in
-torchvision==0.24.0+cpu
+torchvision==0.24.1
     # via -r requirements.in
 tqdm==4.67.1
     # via
