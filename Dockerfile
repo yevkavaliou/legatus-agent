@@ -14,6 +14,16 @@ COPY requirements.txt .
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+ARG TARGETPLATFORM
+
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+        # 1. AMD64 (Servers): Install CPU-only versions specifically
+        pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu; \
+        # 2. Remove torch lines from requirements.txt so pip doesn't try to reinstall the heavy CUDA versions
+        #    We use 'sed' to delete lines starting with torch
+        sed -i '/^torch/d' requirements.txt; \
+    fi
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 # APP ASSEMBLER
