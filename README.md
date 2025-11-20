@@ -33,13 +33,13 @@ Run this one-time command to automatically create the necessary folders and conf
 **Linux/macOS:**
 ```bash
 mkdir legatus-project && cd legatus-project
-docker run --rm -v "$(pwd):/target" yevkavaliou/legatus-agent:latest setup
+docker run --rm -v "$(pwd):/app/target" yevkavaliou/legatus-agent:latest python -m src.legatus_ai.setup
 ```
 
 **Windows (PowerShell):**
 ```powershell
 mkdir legatus-project; cd legatus-project
-docker run --rm -v "${pwd}:/target" yevkavaliou/legatus-agent:latest setup
+docker run --rm -v "${pwd}:/app/target" yevkavaliou/legatus-agent:latest python -m src.legatus_ai.setup
 ```
 
 ### 🚗 Manual Start (More control for you)
@@ -132,7 +132,7 @@ docker run --rm -it \
   -v "$(pwd)/config.yaml:/app/config.yaml" \
   -v "$(pwd)/.env:/app/.env" \
   -v "$(pwd)/data:/app/data" \
-  yevkavaliou/legatus-agent:latest inquisitor
+  yevkavaliou/legatus-agent:latest python -m src.legatus_ai.inquisitor
 ```
 
 ```powershell
@@ -142,7 +142,7 @@ docker run --rm -it `
   -v "${pwd}/config.yaml:/app/config.yaml" `
   -v "${pwd}/.env:/app/.env" `
   -v "${pwd}/data:/app/data" `
-  yevkavaliou/legatus-agent:latest inquisitor
+  yevkavaliou/legatus-agent:latest python -m src.legatus_ai.inquisitor
 ```
 
 This will start an interactive session where you can ask questions about the archived articles.
