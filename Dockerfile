@@ -29,20 +29,29 @@ RUN pip install --no-cache-dir -r requirements.txt
 # APP ASSEMBLER
 FROM python:3.11-slim
 
+RUN groupadd --gid 1000 appuser && \
+    useradd --uid 1000 --gid appuser --create-home appuser
+
 WORKDIR /app
 
 RUN mkdir -p /app/data \
              /app/prompts \
              /app/reports \
              /app/project_data \
-             /app/hf_cache
+             /app/hf_cache \
+    && chown -R appuser:appuser /app
 
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder --chown=appuser:appuser /opt/venv /opt/venv
 
-COPY . .
+COPY --chown=appuser:appuser . .
 
 ENV PATH="/opt/venv/bin:$PATH"
 ENV RUNNING_IN_DOCKER=true
 ENV HF_HOME="/app/hf_cache"
+
+USER appuser
+
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)"
 
 CMD ["python", "-m", "src.legatus_ai.legatus"]
