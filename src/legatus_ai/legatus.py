@@ -1,5 +1,4 @@
 import os
-import yaml
 import json
 import logging
 from pathlib import Path
@@ -14,6 +13,7 @@ from langchain_google_vertexai import ChatVertexAI
 from langchain_ollama import ChatOllama
 
 from .archivum import initialize_database, filter_new_articles, add_articles_to_archive
+from .config import AppConfig
 from .context_generator import generate_full_context
 from .notarius import generate_report
 from .speculator import run_speculator
@@ -24,63 +24,20 @@ from .vigil import filter_articles
 from .scout import run_scout
 
 
-class ConfigError(Exception):
-    """Custom exception for configuration-related errors."""
-    pass
-
-
-def load_config(config_path: Path) -> Dict[str, Any]:
-    """
-    Loads the main YAML config file.
-
-    Args:
-        config_path: Path to the configuration file.
-
-    Returns:
-        A dictionary containing the configuration.
-
-    Raises:
-        ConfigError: If the config file is not found or cannot be parsed.
-    """
-    if not config_path.is_file():
-        error_msg = (
-            f"FATAL: Configuration file '{config_path}' not found.\n"
-            "This application is designed to run with a mounted config file.\n"
-            "To run this agent, please follow these steps:\n"
-            "  1. Create a 'config.yaml' file on your host machine.\n"
-            "     (You can use 'config.yaml.example' as a template).\n"
-            "  2. Run the Docker container with a volume mount, like this:\n"
-            '     docker run --rm -it -v "$(pwd)/config.yaml:/app/config.yaml" legatus-agent'
-        )
-        logging.error("=" * 80)
-        logging.error(error_msg)
-        logging.error("=" * 80)
-        raise ConfigError(error_msg)
-
-    try:
-        with open(config_path, 'r') as f:
-            return yaml.safe_load(f)
-    except yaml.YAMLError as e:
-        logging.error(f"Could not parse YAML configuration: {e}")
-        raise ConfigError(f"YAML parsing error in {config_path}: {e}") from e
-
-
-def initialize_ai_chain(config: Dict[str, Any], context_string: str, prompt_path: Path) -> Optional[Runnable]:
+def initialize_ai_chain(config: AppConfig, context_string: str, prompt_path: Path) -> Optional[Runnable]:
     """
     Initializes a single, pre-primed AI chain with the system prompt and context.
 
     Args:
-        config: The application configuration dictionary.
+        config: The validated application configuration.
         context_string: The JSON string representing the project context.
         prompt_path: Path to the user prompt template file.
 
     Returns:
         A LangChain Runnable object, or None if initialization fails.
     """
-    ai_settings = config.get('ai_settings', {})
-    legatus_config = ai_settings.get('legatus_agent')
-    provider = legatus_config.get('provider')
-    provider_config = ai_settings.get('providers', {}).get(provider, {})
+    legatus_cfg = config.ai_settings.legatus_agent
+    provider = legatus_cfg.provider
 
     system_prompt = (
         "You are an expert AI assistant for an Android Tech Lead. "
@@ -93,22 +50,22 @@ def initialize_ai_chain(config: Dict[str, Any], context_string: str, prompt_path
 
     llm: Optional[ChatOllama | ChatVertexAI] = None
     if provider == "google":
-        model_name = provider_config.get('model', 'gemini-2.5-flash')
-        project_id = provider_config.get('project_id')
-        if not project_id:
+        google_cfg = config.ai_settings.providers.google
+        if not google_cfg.project_id:
             logging.warning(f"Google provider selected but 'project_id' is not configured.")
             return None
         llm = ChatVertexAI(
-            project_id=project_id,
-            model_name=model_name,
-            temperature=legatus_config.get('temperature', 0.2),
+            project_id=google_cfg.project_id,
+            model_name=google_cfg.model,
+            temperature=legatus_cfg.temperature,
             convert_system_message_to_human=True
         )
     elif provider == "ollama":
+        ollama_cfg = config.ai_settings.providers.ollama
         llm = ChatOllama(
-            model=legatus_config.get('model', 'llama3.1'),
-            base_url=provider_config.get('base_url'),
-            temperature=legatus_config.get('temperature', 0.2),
+            model=legatus_cfg.model,
+            base_url=ollama_cfg.base_url,
+            temperature=legatus_cfg.temperature,
             format="json",
         )
 
@@ -179,15 +136,14 @@ def legatus_main():
     try:
         paths = resolve_paths(get_project_root())
 
-        config = load_config(paths.config)
+        config = AppConfig.from_yaml(paths.config)
         initialize_database(paths.database)
     except Exception as e:
         logging.critical(f"Could not initialize the database. Exiting. Error: {e}")
         raise SystemExit(1) from e
 
     logging.info("Legatus: Starting AI Deps Analyst...")
-    is_debug = config.get('debug', False)
-    if is_debug:
+    if config.debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.debug(">>> DEBUG MODE ENABLED <<<")
 

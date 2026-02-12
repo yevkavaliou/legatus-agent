@@ -1,10 +1,8 @@
 import asyncio
 import logging
 from collections import deque
-from pathlib import Path
 from typing import List, Dict, Any, Deque
 
-import yaml
 from dotenv import load_dotenv
 from langchain_classic.agents import create_react_agent, AgentExecutor
 from langchain_core.language_models import BaseLanguageModel
@@ -14,51 +12,36 @@ from langchain_core.tools import BaseTool, render_text_description
 from langchain_ollama import ChatOllama
 from rich.console import Console
 
+from .config import AppConfig, ConfigError
 from .paths import resolve_paths, ApplicationPaths
 from .utils import get_project_root
 from .tools import create_sql_query_tool, create_web_fetcher_tool
 
 
-class ConfigError(Exception):
-    """Custom exception for configuration-related errors."""
-    pass
-
-def load_config(config_path: Path) -> Dict[str, Any]:
-    """Loads the main YAML config file."""
-    if not config_path.is_file():
-        raise ConfigError(f"Config file not found at '{config_path}'. Please create one from 'config.yaml.example'.")
-    try:
-        with open(config_path, 'r') as f:
-            return yaml.safe_load(f)
-    except yaml.YAMLError as e:
-        raise ConfigError(f"Could not parse YAML configuration: {e}") from e
-
-
-def initialize_llm(config: Dict) -> BaseLanguageModel:
+def initialize_llm(config: AppConfig) -> BaseLanguageModel:
     """Initializes the LLM based on the provided configuration."""
-    agent_config = config.get('ai_settings', {}).get('inquisitor_agent', {})
-    provider_details = config.get('ai_settings', {}).get('providers', {}).get('ollama', {})
+    agent_cfg = config.ai_settings.inquisitor_agent
+    ollama_cfg = config.ai_settings.providers.ollama
 
-    base_url = provider_details.get('base_url')
-    if not base_url:
+    if not ollama_cfg.base_url:
         raise ValueError("Ollama base_url is not configured in config.yaml.")
 
-    logging.info(f"Initializing Inquisitor LLM with Ollama at {base_url}")
+    logging.info(f"Initializing Inquisitor LLM with Ollama at {ollama_cfg.base_url}")
     return ChatOllama(
-        model=agent_config.get('model', 'llama3.1'),
-        base_url=base_url,
-        temperature=agent_config.get('temperature', 0.0),
+        model=agent_cfg.model,
+        base_url=ollama_cfg.base_url,
+        temperature=agent_cfg.temperature,
         num_predict=2048
     )
 
 
-def assemble_agent(llm: BaseLanguageModel, config: Dict[str, Any], paths: ApplicationPaths) -> AgentExecutor:
+def assemble_agent(llm: BaseLanguageModel, config: AppConfig, paths: ApplicationPaths) -> AgentExecutor:
     """
     Assembles the tools, prompt, and agent executor.
 
     Args:
         llm: The initialized language model.
-        config: The application configuration.
+        config: The validated application configuration.
         paths: The data class that holds app paths.
 
     Returns:
@@ -97,7 +80,7 @@ def assemble_agent(llm: BaseLanguageModel, config: Dict[str, Any], paths: Applic
     return AgentExecutor(
         agent=agent,
         tools=tools,
-        verbose=config.get('debug', False),
+        verbose=config.debug,
         handle_parsing_errors=handle_parsing_errors,
         max_iterations=7
     )
@@ -152,7 +135,7 @@ def inquisitor_main():
 
     try:
         paths = resolve_paths(get_project_root())
-        config = load_config(paths.config)
+        config = AppConfig.from_yaml(paths.config)
 
         if not paths.database.exists():
             console.print(f"[bold yellow]Warning:[/bold yellow] Database file not found at '{paths.database}'. "

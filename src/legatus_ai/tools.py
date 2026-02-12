@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import aiohttp
 import trafilatura
@@ -9,11 +9,11 @@ from langchain_community.tools import QuerySQLDatabaseTool
 from langchain_community.utilities import SQLDatabase
 from langchain_core.tools import Tool
 
-from .constants import DEFAULT_SPECULATOR_USER_AGENT, DEFAULT_SPECULATOR_TIMEOUT
+from .config import AppConfig
 from .utils import should_verify_ssl_for_url
 
 
-def create_web_fetcher_tool(config: Dict[str, Any]) -> Tool:
+def create_web_fetcher_tool(config: AppConfig) -> Tool:
     """
     Factory function that creates the web article content fetching tool.
 
@@ -21,15 +21,15 @@ def create_web_fetcher_tool(config: Dict[str, Any]) -> Tool:
     configuration for settings like user-agent, timeout, and SSL verification.
 
     Args:
-        config: The application's configuration dictionary.
+        config: The validated application configuration.
 
     Returns:
         A configured LangChain Tool for fetching web content.
     """
-    speculator_config = config.get('speculator_settings', {})
-    user_agent = speculator_config.get('user_agent', DEFAULT_SPECULATOR_USER_AGENT)
-    timeout = speculator_config.get('timeout', DEFAULT_SPECULATOR_TIMEOUT)
-    skip_ssl_domains = config.get('security', {}).get('skip_ssl_verify', [])
+    spec_cfg = config.speculator_settings
+    user_agent = spec_cfg.user_agent
+    timeout = spec_cfg.timeout
+    skip_ssl_domains = config.security.skip_ssl_verify
 
     async def _fetch_article_content_logic(url: str) -> str:
         """
@@ -129,7 +129,7 @@ def create_sql_query_tool(db_path: Path) -> Tool:
         "Input MUST be a single, valid SQLite query. "
         "The database schema is: CREATE TABLE articles("
         "link (TEXT, PRIMARY KEY), title (TEXT), criticality_score (INTEGER), reported_at (TIMESTAMP). "
-        "Example: To find the title of the most critical article, input:"        
+        "Example: To find the title of the most critical article, input:"
         'SELECT title FROM articles ORDER BY criticality_score DESC LIMIT 1'
     )
     sql_tool.name = "articles_database_query"

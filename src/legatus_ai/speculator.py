@@ -10,7 +10,7 @@ from aiohttp import ClientSession
 from google.auth.aio.transport import aiohttp
 from langchain_core.runnables import Runnable
 
-from .constants import DEFAULT_SPECULATOR_USER_AGENT, DEFAULT_SPECULATOR_TIMEOUT, DEFAULT_CONCURRENCY_LIMIT
+from .config import AppConfig
 from .utils import should_verify_ssl_for_url
 
 # A simple type alias for clarity
@@ -18,7 +18,7 @@ Article = Dict[str, Any]
 AnalysisResult = Dict[str, Any]
 
 
-async def _fetch_and_parse_article_content_async(session: ClientSession, url: str, config: Dict[str, Any]) -> Optional[
+async def _fetch_and_parse_article_content_async(session: ClientSession, url: str, config: AppConfig) -> Optional[
     str]:
     """
     Asynchronously fetches and parses the main textual content of an article.
@@ -26,21 +26,17 @@ async def _fetch_and_parse_article_content_async(session: ClientSession, url: st
     Args:
         session: The aiohttp ClientSession to use for the request.
         url: The URL of the article to fetch.
-        config: The application configuration dictionary.
+        config: The validated application configuration.
 
     Returns:
         The cleaned text content of the article as a string, or None on failure.
     """
-    speculator_config = config.get('speculator_settings', {})
-    user_agent = speculator_config.get('user_agent', DEFAULT_SPECULATOR_USER_AGENT)
-    timeout = speculator_config.get('timeout', DEFAULT_SPECULATOR_TIMEOUT)
-    skip_ssl_domains = config.get('security', {}).get('skip_ssl_verify', [])
-
-    headers = {'User-Agent': user_agent}
-    ssl_context = should_verify_ssl_for_url(url, skip_ssl_domains)
+    spec_cfg = config.speculator_settings
+    headers = {'User-Agent': spec_cfg.user_agent}
+    ssl_context = should_verify_ssl_for_url(url, config.security.skip_ssl_verify)
 
     try:
-        async with session.get(url, headers=headers, ssl=ssl_context, timeout=timeout) as response:
+        async with session.get(url, headers=headers, ssl=ssl_context, timeout=spec_cfg.timeout) as response:
             response.raise_for_status()
             html_content = await response.text()
 
@@ -91,7 +87,7 @@ async def _analyze_single_article(
         session: ClientSession,
         article: Article,
         ai_chain: Runnable,
-        config: Dict[str, Any],
+        config: AppConfig,
         semaphore: asyncio.Semaphore,
 ) -> Optional[AnalysisResult]:
     """
@@ -132,7 +128,7 @@ async def _analyze_single_article(
 async def run_speculator_async(
         articles: List[Article],
         ai_chain: Runnable,
-        config: Dict[str, Any]
+        config: AppConfig
 ) -> List[AnalysisResult]:
     """
     Asynchronously analyzes a list of relevant articles to produce summaries and scores.
@@ -142,7 +138,7 @@ async def run_speculator_async(
     logging.info("Speculator Module: Concurrently analyzing relevant articles...")
     logging.info("=" * 80)
 
-    concurrency_limit = config.get('speculator_settings', {}).get('concurrency_limit', DEFAULT_CONCURRENCY_LIMIT)
+    concurrency_limit = config.speculator_settings.concurrency_limit
     semaphore = asyncio.Semaphore(concurrency_limit)
 
     async with ClientSession() as session:
@@ -158,7 +154,7 @@ async def run_speculator_async(
     return final_analyses
 
 
-def run_speculator(articles: List[Article], ai_chain: Runnable, config: Dict[str, Any]) -> List[AnalysisResult]:
+def run_speculator(articles: List[Article], ai_chain: Runnable, config: AppConfig) -> List[AnalysisResult]:
     """Synchronous wrapper to run the async speculator function."""
     # Ensure ai_chain is a Runnable, as the old version had 'Any'
     if not isinstance(ai_chain, Runnable):
