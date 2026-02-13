@@ -5,6 +5,9 @@ from unittest.mock import patch, MagicMock
 # Import the function we are testing
 from src.legatus_ai.legatus import legatus_main
 
+# Import AppConfig to build typed mock configs
+from src.legatus_ai.config import AppConfig
+
 # To help with type hinting our mocks
 from src.legatus_ai.paths import ApplicationPaths
 
@@ -16,7 +19,7 @@ class TestLegatusOrchestration(unittest.TestCase):
     @patch('src.legatus_ai.legatus.load_dotenv')
     @patch('src.legatus_ai.legatus.logging.basicConfig')
     @patch('src.legatus_ai.legatus.resolve_paths')
-    @patch('src.legatus_ai.legatus.load_config')
+    @patch('src.legatus_ai.config.AppConfig.from_yaml')
     @patch('src.legatus_ai.legatus.initialize_database')
     @patch('src.legatus_ai.legatus.generate_full_context')
     @patch('src.legatus_ai.legatus.initialize_ai_chain')
@@ -30,7 +33,7 @@ class TestLegatusOrchestration(unittest.TestCase):
     def test_legatus_full_run_with_new_articles(
             self, mock_add_archive, mock_gen_report, mock_speculator,
             mock_filter_new, mock_filter_articles, mock_scout, mock_getenv,
-            mock_init_chain, mock_gen_context, mock_init_db, mock_load_config,
+            mock_init_chain, mock_gen_context, mock_init_db, mock_from_yaml,
             mock_resolve_paths, mock_logging, mock_dotenv
     ):
         """
@@ -39,8 +42,8 @@ class TestLegatusOrchestration(unittest.TestCase):
         print("\nTesting Legatus orchestration (full run)...")
 
         # --- ARRANGE ---
-        # 1. Create a more realistic mock_config that matches the expected structure.
-        mock_config = {
+        # 1. Create a typed config that matches the expected structure.
+        mock_config = AppConfig.model_validate({
             'debug': False,
             'ai_settings': {
                 'legatus_agent': {
@@ -53,8 +56,8 @@ class TestLegatusOrchestration(unittest.TestCase):
                     'google': {'project_id': 'mock-project'}
                 }
             }
-        }
-        mock_load_config.return_value = mock_config
+        })
+        mock_from_yaml.return_value = mock_config
 
         # 2. Mock the core paths returned by resolve_paths
         mock_paths = ApplicationPaths(
@@ -82,7 +85,7 @@ class TestLegatusOrchestration(unittest.TestCase):
         # --- ASSERT ---
         # Verify initialization
         mock_resolve_paths.assert_called_once()
-        mock_load_config.assert_called_once_with(mock_paths.config)
+        mock_from_yaml.assert_called_once_with(mock_paths.config)
         mock_init_db.assert_called_once_with(mock_paths.database)
 
         # Verify context and AI chain setup

@@ -6,6 +6,9 @@ from unittest.mock import patch, MagicMock, AsyncMock
 # Import the functions to be tested
 from src.legatus_ai.tools import create_sql_query_tool, create_web_fetcher_tool
 
+# Import AppConfig to build typed mock configs
+from src.legatus_ai.config import AppConfig
+
 
 class TestTools(unittest.TestCase):
 
@@ -33,14 +36,14 @@ class TestTools(unittest.TestCase):
         #    when its context manager is entered.
         mock_client_session.return_value.__aenter__.return_value = mock_session
 
-        # 6. Define a mock config for the factory
-        mock_config = {
+        # 6. Define a typed config for the factory
+        mock_config = AppConfig.model_validate({
             "speculator_settings": {
                 "user_agent": "TestAgent/1.0",
                 "timeout": 10
             },
             "security": {"skip_ssl_verify": []}
-        }
+        })
 
         # --- ACT ---
         web_fetcher_tool = create_web_fetcher_tool(mock_config)

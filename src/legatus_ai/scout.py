@@ -9,7 +9,8 @@ import feedparser
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 
-from .constants import DEFAULT_SCOUT_USER_AGENT, DEFAULT_SCOUT_TIMEOUT
+from .config import AppConfig
+from .constants import DEFAULT_SCOUT_TIMEOUT
 from .utils import should_verify_ssl_for_url
 
 # A simple type alias for clarity
@@ -41,15 +42,14 @@ def _extract_summary(entry) -> str:
 
     return ""
 
-async def fetch_from_rss_async(client: ClientSession, config: Dict, source_url: str) -> List[Article]:
+async def fetch_from_rss_async(client: ClientSession, config: AppConfig, source_url: str) -> List[Article]:
     """Asynchronously fetches and filters recent articles from a single RSS feed."""
     logging.info(f"Scanning RSS feed: {source_url}")
     found_articles: List[Article] = []
 
-    rules = config.get('analysis_rules', {})
-    lookback_hours = rules.get('lookback_period_hours', 24)
-    timeout = config.get('scout_settings', {}).get('timeout', DEFAULT_SCOUT_TIMEOUT)
-    skip_ssl_domains = config.get('security', {}).get('skip_ssl_verify', [])
+    lookback_hours = config.analysis_rules.lookback_period_hours
+    timeout = config.scout_settings.timeout
+    skip_ssl_domains = config.security.skip_ssl_verify
 
     ssl_context = should_verify_ssl_for_url(source_url, skip_ssl_domains)
 
@@ -98,13 +98,12 @@ async def fetch_from_rss_async(client: ClientSession, config: Dict, source_url: 
     return []
 
 
-async def fetch_from_github_releases_async(client: ClientSession, config: Dict, repo: str) -> List[Article]:
+async def fetch_from_github_releases_async(client: ClientSession, config: AppConfig, repo: str) -> List[Article]:
     """Asynchronously fetches recent releases from a GitHub repository."""
     logging.info(f"Scanning GitHub Releases for repo: {repo}")
     found_articles: List[Article] = []
 
-    rules = config.get('analysis_rules', {})
-    lookback_hours = rules.get('lookback_period_hours', 24)
+    lookback_hours = config.analysis_rules.lookback_period_hours
 
     api_url = f"https://api.github.com/repos/{repo}/releases"
     cutoff_time = datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
@@ -145,19 +144,19 @@ async def fetch_from_github_releases_async(client: ClientSession, config: Dict, 
 
 
 # Map config keys to their corresponding async fetcher functions
-SOURCE_FETCHER_MAP: Dict[str, Callable[[ClientSession, Dict, str], Coroutine[Any, Any, List[Article]]]] = {
+SOURCE_FETCHER_MAP: Dict[str, Callable[[ClientSession, AppConfig, str], Coroutine[Any, Any, List[Article]]]] = {
     "rss_feeds": fetch_from_rss_async,
     "github_releases": fetch_from_github_releases_async,
 }
 
 
-async def run_scout_async(config: Dict[str, Any], github_token: Optional[str]) -> List[Article]:
+async def run_scout_async(config: AppConfig, github_token: Optional[str]) -> List[Article]:
     """Asynchronously runs the full scouting process based on the configuration."""
     logging.info("=" * 80)
     logging.info("Scout Module: Concurrently searching for new articles...")
     logging.info("=" * 80)
 
-    headers = {'User-Agent': config.get('scout_settings', {}).get('user_agent', DEFAULT_SCOUT_USER_AGENT)}
+    headers = {'User-Agent': config.scout_settings.user_agent}
     if github_token:
         headers['Authorization'] = f"token {github_token}"
         logging.info("Using GitHub token for API requests.")
@@ -165,7 +164,7 @@ async def run_scout_async(config: Dict[str, Any], github_token: Optional[str]) -
         logging.warning("No GitHub token provided. API requests may be rate-limited.")
 
     all_articles: List[Article] = []
-    data_sources = config.get('data_sources', {})
+    data_sources = config.data_sources.model_dump()
 
     async with aiohttp.ClientSession(headers=headers) as session:
         tasks = []
@@ -184,6 +183,6 @@ async def run_scout_async(config: Dict[str, Any], github_token: Optional[str]) -
     logging.info(f"Scout finished. Total articles/links found: {len(all_articles)}")
     return all_articles
 
-def run_scout(config: Dict[str, Any], github_token: Optional[str] = None) -> List[Article]:
+def run_scout(config: AppConfig, github_token: Optional[str] = None) -> List[Article]:
     """Synchronous wrapper to run the async scout function."""
     return asyncio.run(run_scout_async(config, github_token=github_token))

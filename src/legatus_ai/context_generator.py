@@ -5,6 +5,7 @@ from typing import Set, Dict, Any, Optional
 import toml
 from sentence_transformers import SentenceTransformer
 
+from .config import AppConfig
 from .constants import DEFAULT_EMBEDDING_MODEL
 
 # A set of known Gradle plugin aliases that don't have a 'name' or 'module' property
@@ -65,7 +66,7 @@ def _parse_version_catalog(catalog_path: Path) -> Set[str]:
     return dependencies
 
 
-def generate_full_context(config: Dict[str, Any], catalog_path: Optional[Path]) -> Dict[str, Any]:
+def generate_full_context(config: AppConfig, catalog_path: Optional[Path]) -> Dict[str, Any]:
     """
     Generates the full, rich project context object from all configured sources.
 
@@ -73,7 +74,7 @@ def generate_full_context(config: Dict[str, Any], catalog_path: Optional[Path]) 
     semantic embedding of the entire context.
 
     Args:
-        config: The application configuration dictionary.
+        config: The validated application configuration.
         catalog_path: Optional path to the project's .toml version catalog file.
 
     Returns:
@@ -83,17 +84,16 @@ def generate_full_context(config: Dict[str, Any], catalog_path: Optional[Path]) 
     logging.info("Context Generator: Building full project fingerprint...")
     logging.info("=" * 80)
 
-    project_info = config.get('project_info', {})
+    project_info = config.project_info
     full_context = {
-        "narrative": project_info.get('context', ''),
-        "build_config": project_info.get('build_config', {}),
-        "capabilities": project_info.get('capabilities', {}),
-        "dependencies": set(project_info.get('dependency_sources', {}).get('manual_keywords', []))
+        "narrative": project_info.context,
+        "build_config": project_info.build_config.model_dump(),
+        "capabilities": project_info.capabilities.model_dump(),
+        "dependencies": set(project_info.dependency_sources.manual_keywords)
     }
 
-    dep_sources = project_info.get('dependency_sources', {})
-    vc_config = dep_sources.get('version_catalog_file', {})
-    if vc_config.get('enabled') and catalog_path is not None:
+    vc_config = project_info.dependency_sources.version_catalog_file
+    if vc_config.enabled and catalog_path is not None:
         logging.info(f"Parsing dependencies from version catalog: {catalog_path}")
         full_context["dependencies"].update(_parse_version_catalog(catalog_path))
     else:
@@ -105,7 +105,7 @@ def generate_full_context(config: Dict[str, Any], catalog_path: Optional[Path]) 
     dependencies_str = ' '.join(full_context.get('dependencies', set()))
     full_text_context = f"Project focus: {narrative}. Key technologies and libraries used: {dependencies_str}"
 
-    model_name = config.get('ai_settings', {}).get('embedding_model', DEFAULT_EMBEDDING_MODEL)
+    model_name = config.ai_settings.embedding_model
     logging.info(f"Using embedding model: {model_name}")
 
     model = SentenceTransformer(model_name)

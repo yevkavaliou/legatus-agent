@@ -7,6 +7,9 @@ from types import SimpleNamespace
 # Import the functions to be tested
 from src.legatus_ai.scout import _extract_summary, run_scout_async, fetch_from_rss_async
 
+# Import AppConfig to build typed mock configs
+from src.legatus_ai.config import AppConfig
+
 
 # We use a standard TestCase for the synchronous function _extract_summary
 class TestScoutUtilities(unittest.TestCase):
@@ -63,8 +66,10 @@ class TestScoutAsyncOperations(unittest.IsolatedAsyncioTestCase):
         # Configure the synchronous .get() method to return our context manager.
         mock_session.get.return_value = mock_context_manager
 
-        # 4. Define the config
-        mock_config = {"analysis_rules": {"lookback_period_hours": 24}}
+        # 4. Define the typed config
+        mock_config = AppConfig.model_validate({
+            "analysis_rules": {"lookback_period_hours": 24}
+        })
 
         # --- ACT ---
         articles = await fetch_from_rss_async(mock_session, mock_config, 'http://fake-feed.com/rss')
@@ -87,12 +92,12 @@ class TestScoutAsyncOperations(unittest.IsolatedAsyncioTestCase):
         mock_fetcher_map["rss_feeds"] = mock_rss_fetcher
         mock_fetcher_map["github_releases"] = mock_github_fetcher
 
-        mock_config = {
+        mock_config = AppConfig.model_validate({
             "data_sources": {
                 "rss_feeds": ["http://rss-url.com/feed"],
                 "github_releases": ["owner/repo"]
             }
-        }
+        })
 
         # --- ACT ---
         results = await run_scout_async(mock_config, "dummy_token")

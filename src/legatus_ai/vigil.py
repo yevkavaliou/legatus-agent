@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Optional
 
 from sentence_transformers import SentenceTransformer, util
 
+from .config import AppConfig
 from .constants import DEFAULT_EMBEDDING_MODEL, DEFAULT_SIMILARITY_THRESHOLD
 
 # A simple type alias for clarity
@@ -32,7 +33,7 @@ def _get_embedding_model(model_name: str) -> SentenceTransformer:
     return _model_cache
 
 
-def filter_articles(articles: List[Article], context: Dict[str, Any], config: Dict[str, Any]) -> List[Article]:
+def filter_articles(articles: List[Article], context: Dict[str, Any], config: AppConfig) -> List[Article]:
     """
     Filters a list of articles using semantic similarity between their embeddings
     and the project's context embedding.
@@ -40,7 +41,7 @@ def filter_articles(articles: List[Article], context: Dict[str, Any], config: Di
     Args:
         articles: A list of article dictionaries gathered by the Scout module.
         context: The project context dictionary, which must contain an 'embedding'.
-        config: The application configuration dictionary for tuning parameters.
+        config: The validated application configuration.
 
     Returns:
         A deduplicated list of articles that are semantically relevant.
@@ -58,10 +59,8 @@ def filter_articles(articles: List[Article], context: Dict[str, Any], config: Di
         logging.error("Project context embedding not found. Skipping filtering.")
         return articles
 
-    ai_settings = config.get('ai_settings', {})
-    analysis_rules = config.get('analysis_rules', {})
-    model_name = ai_settings.get('embedding_model', DEFAULT_EMBEDDING_MODEL)
-    similarity_threshold = analysis_rules.get('vigil_similarity_threshold', DEFAULT_SIMILARITY_THRESHOLD)
+    model_name = config.ai_settings.embedding_model
+    similarity_threshold = config.analysis_rules.vigil_similarity_threshold
 
     try:
         model = _get_embedding_model(model_name)

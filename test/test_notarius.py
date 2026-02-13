@@ -7,6 +7,9 @@ from unittest.mock import patch, MagicMock, mock_open
 
 from src.legatus_ai.notarius import generate_report
 
+# Import AppConfig to build typed mock configs
+from src.legatus_ai.config import AppConfig
+
 
 class TestNotarius(unittest.TestCase):
 
@@ -26,7 +29,7 @@ class TestNotarius(unittest.TestCase):
         """
         print("\nTesting Notarius CSV report generation...")
 
-        mock_config = {"notarius_settings": {"format": "csv"}}
+        mock_config = AppConfig.model_validate({"notarius_settings": {"format": "csv"}})
 
         # Use a with statement to patch the DictWriter for this test
         with patch("src.legatus_ai.notarius.csv.DictWriter") as mock_csv_writer:
@@ -61,7 +64,7 @@ class TestNotarius(unittest.TestCase):
         """
         print("\nTesting Notarius JSON report generation...")
 
-        mock_config = {"notarius_settings": {"format": "json"}}
+        mock_config = AppConfig.model_validate({"notarius_settings": {"format": "json"}})
 
         with patch("src.legatus_ai.notarius.json.dump") as mock_json_dump:
             # --- ACT ---
@@ -85,7 +88,7 @@ class TestNotarius(unittest.TestCase):
         """
         print("\nTesting Notarius with empty results...")
 
-        mock_config = {"notarius_settings": {"format": "csv"}}
+        mock_config = AppConfig.model_validate({"notarius_settings": {"format": "csv"}})
 
         with patch('src.legatus_ai.notarius.Path.mkdir') as mock_mkdir, \
                 patch('builtins.open') as mock_file_open:

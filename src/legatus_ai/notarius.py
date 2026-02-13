@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Callable
 
-from .constants import DEFAULT_REPORT_FORMAT
+from .config import AppConfig
 
 # A simple type alias for clarity
 AnalysisResult = Dict[str, Any]
@@ -63,7 +63,7 @@ _REPORT_WRITERS: Dict[str, Callable[[Path, List[AnalysisResult]], None]] = {
 }
 
 
-def generate_report(config: Dict[str, Any], output_path: Path, analysis_results: List[AnalysisResult]):
+def generate_report(config: AppConfig, output_path: Path, analysis_results: List[AnalysisResult]):
     """
     Generates a user-facing report from the analysis results.
 
@@ -71,7 +71,7 @@ def generate_report(config: Dict[str, Any], output_path: Path, analysis_results:
     in the configuration.
 
     Args:
-        config: The application configuration dictionary.
+        config: The validated application configuration.
         output_path: The output path for reports.
         analysis_results: A list of analysis dictionaries from the Speculator.
     """
@@ -79,8 +79,7 @@ def generate_report(config: Dict[str, Any], output_path: Path, analysis_results:
         logging.info("No analysis results to report. Skipping report generation.")
         return
 
-    notarius_config = config.get('notarius_settings', {})
-    report_format = notarius_config.get('format', DEFAULT_REPORT_FORMAT).lower()
+    report_format = config.notarius_settings.format.lower()
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     final_report_path = (output_path / f"legatus_report_{timestamp}.{report_format}").resolve()
 

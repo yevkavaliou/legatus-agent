@@ -5,6 +5,9 @@ from unittest.mock import patch, MagicMock, AsyncMock
 # Import the function to be tested
 from src.legatus_ai.inquisitor import inquisitor_main
 
+# Import AppConfig to build typed mock configs
+from src.legatus_ai.config import AppConfig
+
 # To help with type hinting our mocks
 from src.legatus_ai.paths import ApplicationPaths
 
@@ -15,11 +18,11 @@ class TestInquisitor(unittest.TestCase):
     @patch('src.legatus_ai.inquisitor.interactive_loop', new_callable=AsyncMock)
     @patch('src.legatus_ai.inquisitor.assemble_agent')
     @patch('src.legatus_ai.inquisitor.initialize_llm')
-    @patch('src.legatus_ai.inquisitor.load_config')
+    @patch('src.legatus_ai.config.AppConfig.from_yaml')
     @patch('src.legatus_ai.inquisitor.resolve_paths')
     @patch('src.legatus_ai.inquisitor.load_dotenv')
     def test_inquisitor_main_orchestration(
-            self, mock_dotenv, mock_resolve_paths, mock_load_config,
+            self, mock_dotenv, mock_resolve_paths, mock_from_yaml,
             mock_init_llm, mock_assemble_agent, mock_interactive_loop
     ):
         """
@@ -39,8 +42,8 @@ class TestInquisitor(unittest.TestCase):
         )
         mock_resolve_paths.return_value = mock_paths
 
-        mock_config = {"debug": True}
-        mock_load_config.return_value = mock_config
+        mock_config = AppConfig.model_validate({"debug": True})
+        mock_from_yaml.return_value = mock_config
 
         mock_llm = MagicMock(name="MockLLM")
         mock_init_llm.return_value = mock_llm
@@ -55,7 +58,7 @@ class TestInquisitor(unittest.TestCase):
         # 1. Verify that the setup functions were called in order and with the correct arguments
         mock_dotenv.assert_called_once()
         mock_resolve_paths.assert_called_once()
-        mock_load_config.assert_called_once_with(mock_paths.config)
+        mock_from_yaml.assert_called_once_with(mock_paths.config)
         mock_init_llm.assert_called_once_with(mock_config)
         mock_assemble_agent.assert_called_once_with(mock_llm, mock_config, mock_paths)
 
@@ -65,11 +68,11 @@ class TestInquisitor(unittest.TestCase):
         self.assertEqual(mock_interactive_loop.call_args.args[0], mock_agent_executor)
 
     @patch('src.legatus_ai.inquisitor.resolve_paths')
-    @patch('src.legatus_ai.inquisitor.load_config')
+    @patch('src.legatus_ai.config.AppConfig.from_yaml')
     @patch('src.legatus_ai.inquisitor.logging')
     @patch('src.legatus_ai.inquisitor.Console')
     def test_inquisitor_setup_failure(
-            self, mock_console, mock_logging, mock_load_config, mock_resolve_paths
+            self, mock_console, mock_logging, mock_from_yaml, mock_resolve_paths
     ):
         """
         Tests that a critical error is logged and printed if setup fails.
@@ -79,7 +82,7 @@ class TestInquisitor(unittest.TestCase):
         # --- ARRANGE ---
         # Simulate a failure during config loading
         error_message = "Test config error"
-        mock_load_config.side_effect = ValueError(error_message)
+        mock_from_yaml.side_effect = ValueError(error_message)
 
         # Mock the paths to allow the test to get to the failing part
         mock_paths = ApplicationPaths(config=Path("/mock/config.yaml"), database=Path("..."),
