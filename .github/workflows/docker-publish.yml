@@ -36,6 +36,18 @@ jobs:
           echo "Detected version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      # --- Run tests ---
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install pytest
+
+      - name: Run tests
+        run: pytest test/
+
       # --- Set up Docker ---
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
