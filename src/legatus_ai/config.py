@@ -7,10 +7,21 @@ Modules import ``AppConfig`` instead of passing raw dictionaries around.
 
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
+
+
+def _none_to_list(v: object) -> object:
+    """YAML keys with only comments parse as ``None``; coerce to ``[]``."""
+    return v if v is not None else []
+
+
+# A ``List[str]`` that silently treats ``None`` as an empty list.
+# This covers YAML entries like ``skip_ssl_verify:\n  # - example.com``
+# where the key exists but the value is ``None``.
+StrList = Annotated[List[str], BeforeValidator(_none_to_list)]
 
 from .constants import (
     DEFAULT_EMBEDDING_MODEL,
@@ -30,12 +41,12 @@ class BuildConfig(BaseModel):
     minSdk: int = 24
     targetSdk: int = 34
     compileSdk: int = 34
-    build_features: List[str] = Field(default_factory=list)
+    build_features: StrList = Field(default_factory=list)
 
 
 class Capabilities(BaseModel):
-    permissions: List[str] = Field(default_factory=list)
-    features: List[str] = Field(default_factory=list)
+    permissions: StrList = Field(default_factory=list)
+    features: StrList = Field(default_factory=list)
 
 
 class VersionCatalogFile(BaseModel):
@@ -44,7 +55,7 @@ class VersionCatalogFile(BaseModel):
 
 class DependencySources(BaseModel):
     version_catalog_file: VersionCatalogFile = Field(default_factory=VersionCatalogFile)
-    manual_keywords: List[str] = Field(default_factory=list)
+    manual_keywords: StrList = Field(default_factory=list)
 
 
 class ProjectInfo(BaseModel):
@@ -57,8 +68,8 @@ class ProjectInfo(BaseModel):
 # ── data_sources ──────────────────────────────────────────────────────
 
 class DataSources(BaseModel):
-    rss_feeds: List[str] = Field(default_factory=list)
-    github_releases: List[str] = Field(default_factory=list)
+    rss_feeds: StrList = Field(default_factory=list)
+    github_releases: StrList = Field(default_factory=list)
 
 
 # ── analysis_rules ────────────────────────────────────────────────────
@@ -115,7 +126,7 @@ class NotariusSettings(BaseModel):
 
 
 class SecuritySettings(BaseModel):
-    skip_ssl_verify: List[str] = Field(default_factory=list)
+    skip_ssl_verify: StrList = Field(default_factory=list)
 
 
 # ── root config ───────────────────────────────────────────────────────
