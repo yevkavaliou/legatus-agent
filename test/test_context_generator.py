@@ -7,6 +7,9 @@ from unittest.mock import patch, MagicMock
 from src.legatus_ai.context_generator import generate_full_context
 from src.legatus_ai.constants import DEFAULT_EMBEDDING_MODEL
 
+# Import AppConfig to build typed mock configs
+from src.legatus_ai.config import AppConfig
+
 
 class TestContextGenerator(unittest.TestCase):
 
@@ -29,8 +32,8 @@ class TestContextGenerator(unittest.TestCase):
         mock_model_instance.encode.return_value = dummy_embedding
         mock_sentence_transformer.return_value = mock_model_instance
 
-        # 2. Create a mock config dictionary.
-        mock_config = {
+        # 2. Create a typed config.
+        mock_config = AppConfig.model_validate({
             "project_info": {
                 "context": "This is a test project.",
                 "build_config": {"minSdk": 24, "targetSdk": 34},
@@ -43,7 +46,7 @@ class TestContextGenerator(unittest.TestCase):
             "ai_settings": {
                 "embedding_model": "mock-embedding-model"
             }
-        }
+        })
 
         # 3. Define the mock path that will be passed to the function.
         mock_catalog_path = Path("/mock/project/libs.versions.toml")
@@ -87,7 +90,7 @@ class TestContextGenerator(unittest.TestCase):
         mock_sentence_transformer.return_value = mock_model_instance
 
         # Config where version catalog is enabled, but we will pass a None path
-        mock_config = {
+        mock_config = AppConfig.model_validate({
             "project_info": {
                 "context": "A simple project.",
                 "dependency_sources": {
@@ -96,7 +99,7 @@ class TestContextGenerator(unittest.TestCase):
                 }
             },
             "ai_settings": {}  # Use default embedding model
-        }
+        })
 
         # --- ACT ---
         # Call the function, explicitly passing None for the catalog_path.

@@ -5,6 +5,9 @@ from unittest.mock import patch, MagicMock, AsyncMock
 from src.legatus_ai.speculator import run_speculator
 from langchain_core.runnables import Runnable
 
+# Import AppConfig to build typed mock configs
+from src.legatus_ai.config import AppConfig
+
 
 class TestSpeculator(unittest.TestCase):
 
@@ -30,16 +33,16 @@ class TestSpeculator(unittest.TestCase):
             None
         ]
 
-        # 3. Define the input articles and the mock config.
+        # 3. Define the input articles and the typed config.
         articles = [
             {'title': 'Relevant Article', 'link': 'http://a.com', 'summary': 'Summary 1'},
             {'title': 'Irrelevant Article', 'link': 'http://b.com', 'summary': 'Summary 2'}
         ]
-        mock_config = {
+        mock_config = AppConfig.model_validate({
             "speculator_settings": {
                 "concurrency_limit": 1
             }
-        }
+        })
 
         # --- ACT ---
         results = run_speculator(articles, mock_ai_chain, mock_config)

@@ -6,6 +6,9 @@ import numpy as np
 # Import the function to be tested
 from src.legatus_ai.vigil import filter_articles
 
+# Import AppConfig to build typed mock configs
+from src.legatus_ai.config import AppConfig
+
 
 class TestVigil(unittest.TestCase):
 
@@ -41,15 +44,15 @@ class TestVigil(unittest.TestCase):
         ]
         mock_context = {"embedding": np.array([0.1, 0.2])}  # Use a real numpy array
 
-        # Define a mock config that sets the threshold to 0.4
-        mock_config = {
+        # Define a typed config that sets the threshold to 0.4
+        mock_config = AppConfig.model_validate({
             "analysis_rules": {
                 "vigil_similarity_threshold": 0.4
             },
             "ai_settings": {
                 "embedding_model": "mock-model-name"
             }
-        }
+        })
 
         # --- ACT ---
         # Call the function with the new, correct signature
@@ -92,7 +95,9 @@ class TestVigil(unittest.TestCase):
             {'title': 'Article A Duplicate', 'link': 'http://a.com', 'summary': 'Second instance'}
         ]
         mock_context = {"embedding": np.array([0.1, 0.2])}
-        mock_config = {"analysis_rules": {"vigil_similarity_threshold": 0.5}}
+        mock_config = AppConfig.model_validate({
+            "analysis_rules": {"vigil_similarity_threshold": 0.5}
+        })
 
         # --- ACT ---
         filtered = filter_articles(articles, mock_context, mock_config)
